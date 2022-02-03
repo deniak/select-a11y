@@ -141,6 +141,7 @@ MultiselectButtons.prototype.filterOptions = function (value) {
         
         this.filteredOptions = filterOptions(this.options, value, selectedValues);
 
+        const c = document.createDocumentFragment();
         this.filteredOptions.forEach(o => {
             const alreadySelected = selectedValues.includes(o.text);
             if (!alreadySelected) {
@@ -155,9 +156,11 @@ MultiselectButtons.prototype.filterOptions = function (value) {
                     this.onOptionClick(this.options.indexOf(o));
                 });
                 optionEl.addEventListener('mousedown', this.onOptionMouseDown.bind(this));
-                this.listboxEl.appendChild(optionEl);
+                // this.listboxEl.appendChild(optionEl);
+                c.appendChild(optionEl);
             }
         });
+        this.listboxEl.appendChild(c);
 
         // reorder options
         // let children = [...this.listboxEl.children];
