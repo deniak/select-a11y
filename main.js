@@ -163,9 +163,8 @@ MultiselectButtons.prototype.filterOptions = function (value) {
         this.filteredOptions = filterOptions(this.options, value, selectedValues);
 
         this.filteredOptions.forEach(o => {
-            const optionEl = [...this.options].find(optionEl => optionEl && optionEl.dataset ? optionEl.dataset.value === o.value : false);
             const alreadySelected = selectedValues.includes(o.text);
-            if (!optionEl && !alreadySelected) {
+            if (!alreadySelected) {
                 const optionEl = document.createElement('li');
                 optionEl.setAttribute('role', 'option');
                 optionEl.id = `${this.idBase}-${this.options.indexOf(o)}`;
@@ -182,16 +181,16 @@ MultiselectButtons.prototype.filterOptions = function (value) {
         });
 
         // reorder options
-        let children = [...this.listboxEl.children];
-        children.sort((a, b) => {
-            const aIndex = this.options.findIndex(o => o.text === a.innerText);
-            const bIndex = this.options.findIndex(o => o.text === b.innerText);
-            return (aIndex > bIndex) ? 1 : -1;
-        });
+        // let children = [...this.listboxEl.children];
+        // children.sort((a, b) => {
+        //     const aIndex = this.options.findIndex(o => o.text === a.innerText);
+        //     const bIndex = this.options.findIndex(o => o.text === b.innerText);
+        //     return (aIndex > bIndex) ? 1 : -1;
+        // });
 
-        for (let i = 0; i < children.length; ++i) {
-            this.listboxEl.appendChild(children[i]);
-        }
+        // for (let i = 0; i < children.length; ++i) {
+        //     this.listboxEl.appendChild(children[i]);
+        // }
     }
 
 }
