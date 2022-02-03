@@ -1,7 +1,7 @@
 <html lang="en" >
 <head>
     <meta charset="utf-8"/>
-    <title>select multiple choices top</title>
+    <title>select single</title>
     <style>
         *, *::before, *::after {
             box-sizing: border-box;
@@ -219,9 +219,9 @@
 </head>
 <body>
 
-<form method=get>
+
 <div>
-    <h2>select multiple choices top</h2>
+    <h2>select single</h2>
     <select name="js-multi-buttons[]" id="js-multi-buttons">
         <option value="">Select a country</option>
     </select>
@@ -249,6 +249,7 @@
 <script type="module">
     import MultiselectButtons from './main.js';
     import countries from './countries.js';
+
     const select = document.getElementById('js-multi-buttons');
     let options = [];
     if (select) {
@@ -268,9 +269,11 @@
     const multiButtonEl = document.querySelector('.js-multi-buttons');
 
     if (multiButtonEl) {
-        const multiButtonComponent = new MultiselectButtons(multiButtonEl, options);
+        const multiButtonComponent = new MultiselectButtons(multiButtonEl, options, false);
         multiButtonComponent.init();
     }
 </script>
+
+
 </body>
 </html>
