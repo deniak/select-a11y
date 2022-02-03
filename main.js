@@ -398,7 +398,7 @@ if (select) {
     /*
      * Multiselect Combobox w/ Buttons code
      */
-    const MultiselectButtons = function (el, options) {
+    const MultiselectButtons = function (el, options, multiple = true) {
         // element refs
         this.el = el;
         this.comboEl = el.querySelector('[role=combobox]');
@@ -411,6 +411,9 @@ if (select) {
         // data
         this.options = options;
         this.filteredOptions = options;
+
+        // multiple select?
+        select.multiple = multiple;
 
         // state
         this.activeIndex = 0;
@@ -586,6 +589,12 @@ if (select) {
     }
 
     MultiselectButtons.prototype.selectOption = function (option) {
+        if (!select.multiple) { // simple select -> remove other selected options
+            this.el.querySelectorAll('.option-selected').forEach(optionEl => {
+                const index = this.options.findIndex(o => o.value === optionEl.dataset.value);
+                this.removeOption(this.options[index]);
+            });
+        }
         const index = this.options.indexOf(option);
         const selected = this.options[index];
         this.activeIndex = index;
@@ -638,6 +647,7 @@ if (select) {
 
     // init multiselect w/ top buttons
     const multiButtonEl = document.querySelector('.js-multi-buttons');
+
     if (multiButtonEl) {
         const multiButtonComponent = new MultiselectButtons(multiButtonEl, options);
         multiButtonComponent.init();
