@@ -39,16 +39,6 @@ function filterOptions(options = [], filter, exclude = []) {
     });
 }
 
-// return an array of exact option name matches from a comma-separated string
-function findMatches(options, search) {
-    const names = search.split(',');
-    return names.map((name) => {
-        const match = options.filter((option) => name.trim().toLowerCase() === option.toLowerCase());
-        return match.length > 0 ? match[0] : null;
-    })
-        .filter((option) => option !== null);
-}
-
 // return combobox action from key press
 function getActionFromKey(key, menuOpen) {
     // handle opening when closed
@@ -74,27 +64,16 @@ function getActionFromKey(key, menuOpen) {
     }
 }
 
-// get index of option that matches a string
-function getIndexByLetter(options, filter) {
-    const firstMatch = filterOptions(options, filter)[0];
-    return firstMatch ? options.indexOf(firstMatch) : -1;
-}
-
 // get updated option index
 function getUpdatedIndex(current, max, action) {
-    // let currentOptions = elements.querySelectorAll(`[role=option]`)[current];
     switch (action) {
         case MenuActions.First:
             return 0;
         case MenuActions.Last:
             return max;
         case MenuActions.Previous:
-            // const previousOption = currentOptions.previousElementSibling;
-            // return previousOption ? previousOption.id.split('-').pop() : current;
             return Math.max(0, current - 1);
         case MenuActions.Next:
-            // const nextOption = currentOptions.nextElementSibling;
-            // return nextOption ? nextOption.id.split('-').pop() : current;
             return Math.min(max, current + 1);
         default:
             return current;
@@ -298,10 +277,8 @@ MultiselectButtons.prototype.onOptionMouseDown = function () {
 
 MultiselectButtons.prototype.removeOption = function (option) {
     const index = this.options.indexOf(option);
-    // const option = this.options[index];
 
     // update aria-selected
-    // const options = this.el.querySelectorAll('[role=option]');
     const o = this.el.querySelector(`[id=${this.idBase}-${index}]`);
     o.setAttribute('aria-selected', 'false');
     o.classList.remove('option-selected');
@@ -325,7 +302,6 @@ MultiselectButtons.prototype.selectOption = function (option) {
     this.activeIndex = index;
 
     // update aria-selected
-    // const options = this.el.querySelectorAll('[role=option]');
     const o = this.el.querySelector(`[id=${this.idBase}-${index}]`);
     o.setAttribute('aria-selected', 'true');
     o.classList.add('option-selected');
