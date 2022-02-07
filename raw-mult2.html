@@ -220,10 +220,10 @@
     </select>
 
     <label id="combo3-label" class="combo-label">Choose countries</label>
-    <span id="combo3-remove" style="display: none">remove</span>
+    <!-- <span id="combo3-remove" style="display: none">remove</span> -->
     <!-- used as descriptive text for option buttons; if used within the button text itself, it ends up being read with the input name -->
-    <div class="combo js-inline-buttons">
-            <div role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-owns="listbox3"
+    <!-- <div class="combo js-inline-buttons">
+        <div role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-owns="listbox3"
                  class="input-wrapper multiselect-inline">
                 <ul class="selected-options" aria-live="assertive" aria-atomic="false"
                     aria-relevant="additions removals"
@@ -234,10 +234,11 @@
                         aria-labelledby="combo3-label combo3-selected"
                         id="combo3"
                         class="combo-input"
+                        autocomplete="off"
                         type="text">
-            </div>
-            <div class="combo-menu" role="listbox" aria-multiselectable="true" id="listbox3"></div>
         </div>
+        <div class="combo-menu" role="listbox" aria-multiselectable="true" id="listbox3"></div>
+    </div> -->
 </div>
 <input type=submit>
 </form>
@@ -248,18 +249,65 @@
     const select = document.getElementById('js-multi-buttons');
     let options = [];
     if (select) {
+        const baseId = select.nextElementSibling.id.replace('-label', ''); // expect label to follow select
         countries.forEach(c => {
             const o = document.createElement('option');
             o.value = c.code;
             o.innerText = c.country;
             select.appendChild(o);
         });
-
         select.querySelectorAll('option').forEach(option => 
             options.push({value: option.value, text: option.textContent})
         );
-
         select.hidden = true;
+
+        // required elements for MultiselectButtons
+        const span = document.createElement('span');
+        span.id = baseId + '-remove';
+        span.innerText = 'remove';
+        span.style.display = 'none';
+        select.parentNode.appendChild(span);
+
+        const div = document.createElement('div');
+        div.classList.add('combo');
+        div.classList.add('js-inline-buttons');
+
+        const divComboBox = document.createElement('div');
+        divComboBox.setAttribute('role', 'combobox');
+        divComboBox.setAttribute('aria-haspopup', 'listbox');
+        divComboBox.setAttribute('aria-expanded', 'false');
+        divComboBox.setAttribute('aria-owns', baseId + '-listbox');
+        divComboBox.classList.add('input-wrapper');
+        divComboBox.classList.add('multiselect-inline');
+
+        const ul = document.createElement('ul');
+        ul.id = baseId + '-selected';
+        ul.classList.add('selected-options');
+        ul.setAttribute('aria-live', 'assertive');
+        ul.setAttribute('aria-atomic', 'false');
+        divComboBox.appendChild(ul)
+
+        const input = document.createElement('input');
+        input.setAttribute('aria-activedescendant', '');
+        input.setAttribute('aria-autocomplete', 'list');
+        input.setAttribute('aria-labelledby', baseId + '-label ' + baseId + '-selected');
+        input.setAttribute('aria-controls', baseId + '-listbox');
+        input.id = baseId;
+        input.classList.add('combo-input');
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('type', 'text');
+        divComboBox.appendChild(input);
+
+        const ulCombo = document.createElement('ul');
+        ulCombo.setAttribute('role', 'listbox');
+        ulCombo.setAttribute('aria-multiselectable', 'true');
+        ulCombo.id = baseId + '-listbox';
+        ulCombo.setAttribute('aria-labelledby', baseId + '-label');
+        ulCombo.classList.add('combo-menu');
+
+        div.appendChild(divComboBox);
+        div.appendChild(ulCombo);
+        select.parentNode.appendChild(div);
     }
     const inlineButtonEl = document.querySelector('.js-inline-buttons');
     if (inlineButtonEl) {

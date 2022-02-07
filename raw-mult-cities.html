@@ -227,22 +227,6 @@
     </select>
 
     <label id="combo2-label" class="combo-label">Choose countries</label>
-    <span id="combo2-remove" style="display: none">remove</span>
-    <!-- used as descriptive text for option buttons; if used within the button text itself, it ends up being read with the input name -->
-    <ul class="selected-options" id="combo2-selected"></ul>
-    <div class="combo js-multi-buttons">
-        <div role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-owns="listbox2" class="input-wrapper">
-            <input
-                    aria-activedescendant=""
-                    aria-autocomplete="list"
-                    aria-labelledby="combo2-label combo2-selected"
-                    aria-controls="listbox2"
-                    id="combo2"
-                    class="combo-input"
-                    type="text">
-        </div>
-        <ul class="combo-menu" role="listbox" aria-multiselectable="true" id="listbox2" aria-labelledby="combo2-label"></ul>
-    </div>
 </div>
 <input type=submit>
 </form>
@@ -252,18 +236,62 @@
     const select = document.getElementById('js-multi-buttons');
     let options = [];
     if (select) {
+        const baseId = select.nextElementSibling.id.replace('-label', ''); // expect label to follow select
         countries.forEach(c => {
             const o = document.createElement('option');
             o.value = c.code;
             o.innerText = c.country;
             select.appendChild(o);
         });
-
         select.querySelectorAll('option').forEach(option => 
             options.push({value: option.value, text: option.textContent})
         );
-
         select.hidden = true;
+
+        // required elements for MultiselectButtons
+        const span = document.createElement('span');
+        span.id = baseId + '-remove';
+        span.innerText = 'remove';
+        span.style.display = 'none';
+        select.parentNode.appendChild(span);
+
+        const ul = document.createElement('ul');
+        ul.id = baseId + '-selected';
+        ul.classList.add('selected-options');
+        select.parentNode.appendChild(ul);
+
+        const div = document.createElement('div');
+        div.classList.add('combo');
+        div.classList.add('js-multi-buttons');
+
+        const divComboBox = document.createElement('div');
+        divComboBox.setAttribute('role', 'combobox');
+        divComboBox.setAttribute('aria-haspopup', 'listbox');
+        divComboBox.setAttribute('aria-expanded', 'false');
+        divComboBox.setAttribute('aria-owns', baseId + '-listbox');
+        divComboBox.classList.add('input-wrapper');
+
+        const input = document.createElement('input');
+        input.setAttribute('aria-activedescendant', '');
+        input.setAttribute('aria-autocomplete', 'list');
+        input.setAttribute('aria-labelledby', baseId + '-label ' + baseId + '-selected');
+        input.setAttribute('aria-controls', baseId + '-listbox');
+        input.id = baseId;
+        input.classList.add('combo-input');
+        input.setAttribute('autocomplete', 'off');
+        input.setAttribute('type', 'text');
+        divComboBox.appendChild(input);
+
+        const ulCombo = document.createElement('ul');
+        ulCombo.setAttribute('role', 'listbox');
+        ulCombo.setAttribute('aria-multiselectable', 'true');
+        ulCombo.id = baseId + '-listbox';
+        ulCombo.setAttribute('aria-labelledby', baseId + '-label');
+        ulCombo.classList.add('combo-menu');
+
+        div.appendChild(divComboBox);
+        div.appendChild(ulCombo);
+        select.parentNode.appendChild(div);
     }
     const multiButtonEl = document.querySelector('.js-multi-buttons');
 

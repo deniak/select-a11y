@@ -136,43 +136,32 @@ MultiselectButtons.prototype.init = function () {
 MultiselectButtons.prototype.filterOptions = function (value) {
     if (value) {
         this.clearOptions();
-        const selectedOptions = this.el.querySelectorAll('[role=option]');
+        const selectedOptions = select.querySelectorAll('[selected=selected]');
         const selectedValues = [...selectedOptions].map(option => option.innerText);
         
-        this.filteredOptions = filterOptions(this.options, value, selectedValues);
+        this.filteredOptions = filterOptions(this.options, value);
 
         const c = document.createDocumentFragment();
         this.filteredOptions.forEach(o => {
             const alreadySelected = selectedValues.includes(o.text);
-            if (!alreadySelected) {
-                const optionEl = document.createElement('li');
-                optionEl.setAttribute('role', 'option');
-                optionEl.id = `${this.idBase}-${this.options.indexOf(o)}`;
-                optionEl.className = 'combo-option';
-                optionEl.setAttribute('aria-selected', 'false');
-                optionEl.dataset.value = o.value;
-                optionEl.innerText = o.text;
-                optionEl.addEventListener('click', () => {
-                    this.onOptionClick(this.options.indexOf(o));
-                });
-                optionEl.addEventListener('mousedown', this.onOptionMouseDown.bind(this));
-                // this.listboxEl.appendChild(optionEl);
-                c.appendChild(optionEl);
+            console.log(alreadySelected);
+            const optionEl = document.createElement('li');
+            optionEl.setAttribute('role', 'option');
+            optionEl.id = `${this.idBase}-${this.options.indexOf(o)}`;
+            optionEl.className = 'combo-option';
+            optionEl.setAttribute('aria-selected', alreadySelected);
+            optionEl.dataset.value = o.value;
+            optionEl.innerText = o.text;
+            if (alreadySelected) {
+                optionEl.classList.add('option-selected');
             }
+            optionEl.addEventListener('click', () => {
+                this.onOptionClick(this.options.indexOf(o));
+            });
+            optionEl.addEventListener('mousedown', this.onOptionMouseDown.bind(this));
+            c.appendChild(optionEl);
         });
         this.listboxEl.appendChild(c);
-
-        // reorder options
-        // let children = [...this.listboxEl.children];
-        // children.sort((a, b) => {
-        //     const aIndex = this.options.findIndex(o => o.text === a.innerText);
-        //     const bIndex = this.options.findIndex(o => o.text === b.innerText);
-        //     return (aIndex > bIndex) ? 1 : -1;
-        // });
-
-        // for (let i = 0; i < children.length; ++i) {
-        //     this.listboxEl.appendChild(children[i]);
-        // }
     }
 
 }
@@ -216,7 +205,7 @@ MultiselectButtons.prototype.onInputKeyDown = function (event) {
             return this.onOptionChange(nextRealIndex);
         case MenuActions.CloseSelect:
             event.preventDefault();
-            return this.updateOption(this.activeIndex);
+            return this.onOptionClick(this.activeIndex);
         case MenuActions.Close:
             event.preventDefault();
             return this.updateMenuState(false);
@@ -260,9 +249,7 @@ MultiselectButtons.prototype.onOptionChange = function (index) {
 MultiselectButtons.prototype.clearOptions = function () {
     const options = this.el.querySelectorAll('[role=option]');
     [...options].forEach(optionEl => {
-        if (!optionEl.classList.contains('option-selected')) {
-            optionEl.remove();
-        }
+        optionEl.remove();
     });
 }
 
@@ -283,8 +270,10 @@ MultiselectButtons.prototype.removeOption = function (option) {
 
     // update aria-selected
     const o = this.el.querySelector(`[id=${this.idBase}-${index}]`);
-    o.setAttribute('aria-selected', 'false');
-    o.classList.remove('option-selected');
+    if (o) {
+        o.setAttribute('aria-selected', 'false');
+        o.classList.remove('option-selected');
+    }
 
     // remove button
     const buttonEl = document.getElementById(`${this.idBase}-remove-${index}`);
@@ -294,12 +283,6 @@ MultiselectButtons.prototype.removeOption = function (option) {
 }
 
 MultiselectButtons.prototype.selectOption = function (option) {
-    if (!select.multiple) { // simple select -> remove other selected options
-        this.el.querySelectorAll('.option-selected').forEach(optionEl => {
-            const index = this.options.findIndex(o => o.value === optionEl.dataset.value);
-            this.removeOption(this.options[index]);
-        });
-    }
     const index = this.options.indexOf(option);
     const selected = this.options[index];
     this.activeIndex = index;
