@@ -32,7 +32,7 @@ const MenuActions = {
 // returns an array of options that begin with the filter string, case-independent
 function filterOptions(options = [], filter, exclude = []) {
     return options.filter(option => {
-        const matches = option.text.toLowerCase().indexOf(filter.toLowerCase()) === 0;
+        const matches = option.text.toLowerCase().indexOf(filter.toLowerCase()) != -1;
         return matches || exclude.includes(option.text);
     });
 }
@@ -101,7 +101,7 @@ function maintainScrollVisibility(activeElement, scrollParent) {
 /*
  * Multiselect Combobox w/ Buttons code
  */
-const MultiselectButtons = function (selectEl, el, options, multiple = true) {
+const MultiselectButtons = function (selectEl, el, options, params) {
     // element refs
     this.select = selectEl;
     this.el = el;
@@ -116,8 +116,10 @@ const MultiselectButtons = function (selectEl, el, options, multiple = true) {
     this.options = options;
     this.filteredOptions = options;
 
-    // multiple select?
-    this.select.multiple = multiple;
+    // params for ajax calls
+    this.ajax = params.ajax;
+    this.source = params.source;
+    this.page = 1;
 
     // state
     this.activeIndex = 0;
@@ -125,8 +127,14 @@ const MultiselectButtons = function (selectEl, el, options, multiple = true) {
 }
 
 MultiselectButtons.prototype.init = function () {
-
-    this.inputEl.addEventListener('input', this.onInput.bind(this));
+    const self = this;
+    let timeout = null;
+    this.inputEl.addEventListener('input', async () => {
+        // add 1s delay to leave time for the user to type
+        clearTimeout(timeout);
+        await new Promise(resolve => timeout = setTimeout(resolve, 1000));
+        self.onInput();
+    });
     this.inputEl.addEventListener('blur', this.onInputBlur.bind(this));
     this.inputEl.addEventListener('click', () => this.updateMenuState(true));
     this.inputEl.addEventListener('keydown', this.onInputKeyDown.bind(this));
@@ -164,9 +172,36 @@ MultiselectButtons.prototype.filterOptions = function (value) {
 
 }
 
-MultiselectButtons.prototype.onInput = function () {
+MultiselectButtons.prototype.onInput = async function () {
+    // let timeout = null;
+    
+    // clearTimeout(timeout);
+// const a = this;
+    // Make a new timeout set to go off in 1000ms (1 second)
+    // await new Promise(resolve => setTimeout(resolve, 1000));
+    // setTimeout(function () {
+    //     console.log('Input Value:', a.inputEl.value);
+    // }, 1000);
     const curValue = this.inputEl.value;
     if (curValue) {
+        if (this.ajax && this.source && curValue.length > 1) {
+            this.options = [];
+            const url = new URL(`${this.source}`);
+            url.search = `${url.search ? url.search + '&' : '?'}q=${curValue}&page=${this.page}`;
+            console.log(url);
+            const response = await fetch(url);
+            const data = await response.json();
+            data.results.forEach(c => {
+                if (!this.select.querySelector(`option[value="${c.id}"]`)) {
+                    const o = document.createElement('option');
+                    o.value = c.id;
+                    o.innerText = c.text;
+                    this.select.appendChild(o);
+                }
+
+                this.options.push({value: c.id, text: c.text});
+            });
+        }
         this.filterOptions(curValue);
 
         // if active option is not in filtered options, set it to first filtered option
@@ -209,6 +244,7 @@ MultiselectButtons.prototype.onInputKeyDown = function (event) {
             return this.updateMenuState(false);
         case MenuActions.Open:
             return this.updateMenuState(true);
+
     }
 }
 

@@ -222,17 +222,21 @@
 <form method=get>
 <div>
     <h2>select multiple choices top</h2>
-    <select name="countries[]" id="countries" data-source="http://localhost:8000/countries.json">
-        <option value="">Select countries</option>
+    <select name="countries[]" id="countries" multiple data-source="http://localhost:8001/countries.json">
     </select>
     <label id="combo2-label" class="combo-label">Choose countries</label>
 </div>
 <div>
     <h2>Second select</h2>
-    <select name="cities[]" id="cities" data-source="http://localhost:8000/countries.json">
-        <option value="">Select cities</option>
+    <select name="cities[]" id="cities" multiple data-source="http://localhost:8001/countries.json">
     </select>
     <label id="cities-label" class="combo-label">Choose cities</label>
+</div>
+<div>
+    <h2>Third select</h2>
+    <select name="participants[]" id="participants" multiple data-type="ajax" data-source="https://localhost:8000/events/meetings/participant-search?page_limit=100&field_name=individuals">
+    </select>
+    <label id="participants-label" class="combo-label">Choose participants</label>
 </div>
 <input type=submit>
 </form>
@@ -241,16 +245,20 @@
 
     const selects = document.querySelectorAll('select');
     selects.forEach(select => {
+        const multiSelectParams = {
+            ajax: select.dataset.type === 'ajax',
+            source: select.dataset.source,
+        }
         let options = [];
         const baseId = select.nextElementSibling.id.replace('-label', ''); // expect label to follow select
         const dataUrl = select.dataset.source;
         (async function() {
-            if (dataUrl) {
+            if (dataUrl && select.dataset.type !== 'ajax') {
                 const response = await fetch(dataUrl);
                 const data = await response.json();
-                data.forEach(c => {
+                data.results.forEach(c => {
                     const o = document.createElement('option');
-                    o.value = c.value;
+                    o.value = c.id;
                     o.innerText = c.text;
                     select.appendChild(o);
                 });
@@ -308,7 +316,7 @@
             const multiButtonEl = document.querySelector(`#${select.id}-js-multi-buttons`);
 
             if (multiButtonEl) {
-                const multiButtonComponent = new MultiselectButtons(select, multiButtonEl, options);
+                const multiButtonComponent = new MultiselectButtons(select, multiButtonEl, options, multiSelectParams);
                 multiButtonComponent.init();
             }
         })();
