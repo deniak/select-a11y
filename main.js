@@ -1,5 +1,3 @@
-const select = document.getElementById('js-multi-buttons');
-
 const Keys = {
     Backspace: 'Backspace',
     Clear: 'Clear',
@@ -103,8 +101,9 @@ function maintainScrollVisibility(activeElement, scrollParent) {
 /*
  * Multiselect Combobox w/ Buttons code
  */
-const MultiselectButtons = function (el, options, multiple = true) {
+const MultiselectButtons = function (selectEl, el, options, multiple = true) {
     // element refs
+    this.select = selectEl;
     this.el = el;
     this.comboEl = el.querySelector('[role=combobox]');
     this.inputEl = el.querySelector('input');
@@ -118,7 +117,7 @@ const MultiselectButtons = function (el, options, multiple = true) {
     this.filteredOptions = options;
 
     // multiple select?
-    select.multiple = multiple;
+    this.select.multiple = multiple;
 
     // state
     this.activeIndex = 0;
@@ -136,7 +135,7 @@ MultiselectButtons.prototype.init = function () {
 MultiselectButtons.prototype.filterOptions = function (value) {
     if (value) {
         this.clearOptions();
-        const selectedOptions = select.querySelectorAll('[selected=selected]');
+        const selectedOptions = this.select.querySelectorAll('[selected=selected]');
         const selectedValues = [...selectedOptions].map(option => option.innerText);
         
         this.filteredOptions = filterOptions(this.options, value);
@@ -144,7 +143,6 @@ MultiselectButtons.prototype.filterOptions = function (value) {
         const c = document.createDocumentFragment();
         this.filteredOptions.forEach(o => {
             const alreadySelected = selectedValues.includes(o.text);
-            console.log(alreadySelected);
             const optionEl = document.createElement('li');
             optionEl.setAttribute('role', 'option');
             optionEl.id = `${this.idBase}-${this.options.indexOf(o)}`;
@@ -279,7 +277,7 @@ MultiselectButtons.prototype.removeOption = function (option) {
     const buttonEl = document.getElementById(`${this.idBase}-remove-${index}`);
     this.selectedEl.removeChild(buttonEl.parentElement);
 
-    select.querySelector('option[value="' + option.value + '"]').removeAttribute('selected');
+    this.select.querySelector('option[value="' + option.value + '"]').removeAttribute('selected');
 }
 
 MultiselectButtons.prototype.selectOption = function (option) {
@@ -304,7 +302,7 @@ MultiselectButtons.prototype.selectOption = function (option) {
     });
     buttonEl.innerHTML = selected.text + ' ';
 
-    select.querySelector('option[value="' + option.value + '"]').setAttribute('selected', 'selected');
+    this.select.querySelector('option[value="' + option.value + '"]').setAttribute('selected', 'selected');
 
     listItem.appendChild(buttonEl);
     this.selectedEl.appendChild(listItem);
