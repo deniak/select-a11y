@@ -101,16 +101,70 @@ function maintainScrollVisibility(activeElement, scrollParent) {
 /*
  * Multiselect Combobox w/ Buttons code
  */
-const MultiselectButtons = function (selectEl, el, options, params) {
+const MultiselectButtons = function (selectEl, params) {
+    let options = [];
+    const baseId = selectEl.nextElementSibling.id.replace('-label', ''); // expect label to follow select
+    selectEl.hidden = true;
+
+    selectEl.querySelectorAll('option').forEach(option => 
+        options.push({value: option.value, text: option.textContent})
+    );
+
+    // required elements for MultiselectButtons
+    const span = document.createElement('span');
+    span.id = baseId + '-remove';
+    span.innerText = 'remove';
+    span.style.display = 'none';
+    selectEl.parentNode.appendChild(span);
+
+    const ul = document.createElement('ul');
+    ul.id = baseId + '-selected';
+    ul.classList.add('selected-options');
+    selectEl.parentNode.appendChild(ul);
+
+    const div = document.createElement('div');
+    div.classList.add('combo');
+    div.id = `${selectEl.id}-js-multi-buttons`;
+
+    const divComboBox = document.createElement('div');
+    divComboBox.setAttribute('role', 'combobox');
+    divComboBox.setAttribute('aria-haspopup', 'listbox');
+    divComboBox.setAttribute('aria-expanded', 'false');
+    divComboBox.setAttribute('aria-owns', baseId + '-listbox');
+    divComboBox.classList.add('input-wrapper');
+
+    const input = document.createElement('input');
+    input.setAttribute('aria-activedescendant', '');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-labelledby', baseId + '-label ' + baseId + '-selected');
+    input.setAttribute('aria-controls', baseId + '-listbox');
+    input.id = baseId;
+    input.classList.add('combo-input');
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('type', 'text');
+    divComboBox.appendChild(input);
+
+    const ulCombo = document.createElement('ul');
+    ulCombo.setAttribute('role', 'listbox');
+    ulCombo.setAttribute('aria-multiselectable', 'true');
+    ulCombo.id = baseId + '-listbox';
+    ulCombo.setAttribute('aria-labelledby', baseId + '-label');
+    ulCombo.classList.add('combo-menu');
+
+    div.appendChild(divComboBox);
+    div.appendChild(ulCombo);
+    selectEl.parentNode.appendChild(div);
+
+
     // element refs
     this.select = selectEl;
-    this.el = el;
-    this.comboEl = el.querySelector('[role=combobox]');
-    this.inputEl = el.querySelector('input');
-    this.listboxEl = el.querySelector('[role=listbox]');
+    this.el = div;
+    this.comboEl = div.querySelector('[role=combobox]');
+    this.inputEl = div.querySelector('input');
+    this.listboxEl = div.querySelector('[role=listbox]');
 
     this.idBase = this.inputEl.id;
-    this.selectedEl = document.getElementById(`${this.idBase}-selected`);
+    this.selectedEl = ul;
 
     // data
     this.options = options;
@@ -121,6 +175,7 @@ const MultiselectButtons = function (selectEl, el, options, params) {
     this.source = params.source;
     this.page = 1;
     this.morePages = false;
+    this.ajaxResultCount;
 
     // state
     this.activeIndex = 0;
@@ -165,11 +220,14 @@ MultiselectButtons.prototype.filterOptions = async function (value) {
         
         this.filteredOptions = filterOptions(this.options, value);
 
+        const count = this.ajaxResultCount || this.filteredOptions.length;
         const c = document.createDocumentFragment();
-        this.filteredOptions.forEach(o => {
+        this.filteredOptions.forEach((o, k) => {
             const alreadySelected = selectedValues.includes(o.text);
             const optionEl = document.createElement('li');
             optionEl.setAttribute('role', 'option');
+            optionEl.setAttribute('aria-setsize', count);
+            optionEl.setAttribute('aria-posinset', k + 1);
             optionEl.id = `${this.idBase}-${this.options.indexOf(o)}`;
             optionEl.className = 'combo-option';
             optionEl.setAttribute('aria-selected', alreadySelected);
@@ -207,6 +265,7 @@ MultiselectButtons.prototype.updateResults = async function() {
     const response = await fetch(url);
     const data = await response.json();
     data.results.forEach(c => {
+        this.ajaxResultCount = data.total;
         if (!this.select.querySelector(`option[value="${c.id}"]`)) {
             const o = document.createElement('option');
             o.value = c.id;
