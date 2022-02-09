@@ -120,6 +120,7 @@ const MultiselectButtons = function (selectEl, el, options, params) {
     this.ajax = params.ajax;
     this.source = params.source;
     this.page = 1;
+    this.morePages = false;
 
     // state
     this.activeIndex = 0;
@@ -130,9 +131,11 @@ MultiselectButtons.prototype.init = function () {
     const self = this;
     let timeout = null;
     this.inputEl.addEventListener('input', async () => {
-        // add 1s delay to leave time for the user to type
-        clearTimeout(timeout);
-        await new Promise(resolve => timeout = setTimeout(resolve, 1000));
+        // add 500ms delay to leave time for the user to type (ajax only)
+        if (this.ajax) {
+            clearTimeout(timeout);
+            await new Promise(resolve => timeout = setTimeout(resolve, 500));
+        }
         self.onInput();
     });
     this.inputEl.addEventListener('blur', this.onInputBlur.bind(this));
@@ -140,7 +143,21 @@ MultiselectButtons.prototype.init = function () {
     this.inputEl.addEventListener('keydown', this.onInputKeyDown.bind(this));
 }
 
-MultiselectButtons.prototype.filterOptions = function (value) {
+const loadMoreResults = function(root, element, callback) {
+    const options = {
+      root,
+      threshold: 0.5
+    }
+  
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        callback(entry.isIntersecting);
+      });
+    }, options);
+  
+    observer.observe(element);
+  }
+MultiselectButtons.prototype.filterOptions = async function (value) {
     if (value) {
         this.clearOptions();
         const selectedOptions = this.select.querySelectorAll('[selected=selected]');
@@ -166,41 +183,48 @@ MultiselectButtons.prototype.filterOptions = function (value) {
             });
             optionEl.addEventListener('mousedown', this.onOptionMouseDown.bind(this));
             c.appendChild(optionEl);
+
+            if (this.ajax && this.source && this.morePages) {
+                if (o === this.filteredOptions[this.filteredOptions.length - 1]) {
+                    loadMoreResults(this.listboxEl, optionEl, async visible => {
+                        if (visible) {
+                            this.page++;
+                            await this.updateResults();
+                            this.filterOptions(value);
+                        }
+                    });
+                }
+            }
         });
         this.listboxEl.appendChild(c);
     }
 
 }
 
+MultiselectButtons.prototype.updateResults = async function() {
+    const url = new URL(this.source);
+    url.search = `${url.search ? url.search + '&' : '?'}q=${this.inputEl.value}&page=${this.page}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    data.results.forEach(c => {
+        if (!this.select.querySelector(`option[value="${c.id}"]`)) {
+            const o = document.createElement('option');
+            o.value = c.id;
+            o.innerText = c.text;
+            this.select.appendChild(o);
+        }
+
+        this.options.push({value: c.id, text: c.text});
+    });
+    this.morePages = data.more || false;
+}
+
 MultiselectButtons.prototype.onInput = async function () {
-    // let timeout = null;
-    
-    // clearTimeout(timeout);
-// const a = this;
-    // Make a new timeout set to go off in 1000ms (1 second)
-    // await new Promise(resolve => setTimeout(resolve, 1000));
-    // setTimeout(function () {
-    //     console.log('Input Value:', a.inputEl.value);
-    // }, 1000);
     const curValue = this.inputEl.value;
     if (curValue) {
         if (this.ajax && this.source && curValue.length > 1) {
             this.options = [];
-            const url = new URL(`${this.source}`);
-            url.search = `${url.search ? url.search + '&' : '?'}q=${curValue}&page=${this.page}`;
-            console.log(url);
-            const response = await fetch(url);
-            const data = await response.json();
-            data.results.forEach(c => {
-                if (!this.select.querySelector(`option[value="${c.id}"]`)) {
-                    const o = document.createElement('option');
-                    o.value = c.id;
-                    o.innerText = c.text;
-                    this.select.appendChild(o);
-                }
-
-                this.options.push({value: c.id, text: c.text});
-            });
+            await this.updateResults();
         }
         this.filterOptions(curValue);
 
