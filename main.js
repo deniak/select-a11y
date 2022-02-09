@@ -117,10 +117,13 @@ const MultiselectButtons = function (selectEl, params) {
     span.style.display = 'none';
     selectEl.parentNode.appendChild(span);
 
-    const ul = document.createElement('ul');
-    ul.id = baseId + '-selected';
-    ul.classList.add('selected-options');
-    selectEl.parentNode.appendChild(ul);
+    if (selectEl.multiple) {
+        const ul = document.createElement('ul');
+        ul.id = baseId + '-selected';
+        ul.classList.add('selected-options');
+        selectEl.parentNode.appendChild(ul);
+        this.selectedEl = ul;
+    }
 
     const div = document.createElement('div');
     div.classList.add('combo');
@@ -164,7 +167,6 @@ const MultiselectButtons = function (selectEl, params) {
     this.listboxEl = div.querySelector('[role=listbox]');
 
     this.idBase = this.inputEl.id;
-    this.selectedEl = ul;
 
     // data
     this.options = options;
@@ -273,7 +275,9 @@ MultiselectButtons.prototype.updateResults = async function() {
             this.select.appendChild(o);
         }
 
-        this.options.push({value: c.id, text: c.text});
+        const option = {value: c.id, text: c.text};
+        if (this.options.indexOf(option) === -1)
+            this.options.push(option);
     });
     this.morePages = data.more || false;
 }
@@ -282,7 +286,6 @@ MultiselectButtons.prototype.onInput = async function () {
     const curValue = this.inputEl.value;
     if (curValue) {
         if (this.ajax && this.source && curValue.length > 1) {
-            this.options = [];
             await this.updateResults();
         }
         this.filterOptions(curValue);
@@ -336,6 +339,8 @@ MultiselectButtons.prototype.onInputBlur = function () {
         this.ignoreBlur = false;
         return;
     }
+
+    this.inputEl.value = '';
 
     if (this.open) {
         this.updateMenuState(false, false);
@@ -393,9 +398,10 @@ MultiselectButtons.prototype.removeOption = function (option) {
     }
 
     // remove button
-    const buttonEl = document.getElementById(`${this.idBase}-remove-${index}`);
-    this.selectedEl.removeChild(buttonEl.parentElement);
-
+    if (this.selectedEl) {
+        const buttonEl = document.getElementById(`${this.idBase}-remove-${index}`);
+        this.selectedEl.removeChild(buttonEl.parentElement);
+    }
     this.select.querySelector('option[value="' + option.value + '"]').removeAttribute('selected');
 }
 
@@ -421,23 +427,31 @@ MultiselectButtons.prototype.selectOption = function (option) {
     });
     buttonEl.innerHTML = selected.text + ' ';
 
-    this.select.querySelector('option[value="' + option.value + '"]').setAttribute('selected', 'selected');
-
     listItem.appendChild(buttonEl);
-    this.selectedEl.appendChild(listItem);
+    if (this.select.multiple) {
+        this.selectedEl.appendChild(listItem);
+    } else {
+        const selectedOption = this.select.querySelector("option[selected]");
+        if (selectedOption) selectedOption.removeAttribute('selected');
+    }
+    this.select.querySelector('option[value="' + option.value + '"]').setAttribute('selected', 'selected');
 }
 
 MultiselectButtons.prototype.updateOption = function (index) {
     const optionEl = this.el.querySelector(`[id=${this.idBase}-${index}]`);
     const isSelected = optionEl.getAttribute('aria-selected') === 'true';
 
+    this.inputEl.value = '';
+
     if (isSelected) {
         this.removeOption(this.options[index]);
     } else {
         this.selectOption(this.options[index]);
+        if (!this.select.multiple) {
+            this.inputEl.value = this.options[index].text;
+        }
     }
 
-    this.inputEl.value = '';
     this.filterOptions('');
 }
 
