@@ -30,10 +30,10 @@ const MenuActions = {
 
 // filter an array of options against an input string
 // returns an array of options that begin with the filter string, case-independent
-function filterOptions(options = [], filter, exclude = []) {
+function filterOptions(options = [], filter, type) {
     return options.filter(option => {
-        const matches = option.text.toLowerCase().indexOf(filter.toLowerCase()) != -1;
-        return matches || exclude.includes(option.text);
+        const text = option.text.toLowerCase();
+        return (type && type === 'contains') ? text.indexOf(filter.toLowerCase()) != -1 : text.startsWith(filter.toLowerCase());
     });
 }
 
@@ -106,8 +106,10 @@ const MultiselectButtons = function (selectEl, params) {
     const baseId = selectEl.nextElementSibling.id.replace('-label', ''); // expect label to follow select
     selectEl.hidden = true;
 
-    selectEl.querySelectorAll('option').forEach(option => 
-        options.push({value: option.value, text: option.textContent})
+    selectEl.querySelectorAll('option').forEach(option => {
+        if (!option.disabled)
+            options.push({value: option.value, text: option.textContent});
+        }
     );
 
     // required elements for MultiselectButtons
@@ -141,7 +143,7 @@ const MultiselectButtons = function (selectEl, params) {
     input.setAttribute('aria-autocomplete', 'list');
     input.setAttribute('aria-labelledby', baseId + '-label ' + baseId + '-selected');
     input.setAttribute('aria-controls', baseId + '-listbox');
-    input.id = baseId;
+    input.id = baseId + "-input";
     input.classList.add('combo-input');
     input.setAttribute('autocomplete', 'off');
     input.setAttribute('type', 'text');
@@ -217,10 +219,10 @@ const loadMoreResults = function(root, element, callback) {
 MultiselectButtons.prototype.filterOptions = async function (value) {
     if (value) {
         this.clearOptions();
-        const selectedOptions = this.select.querySelectorAll('[selected=selected]');
+        const selectedOptions = this.select.querySelectorAll('option:checked');
         const selectedValues = [...selectedOptions].map(option => option.innerText);
-        
-        this.filteredOptions = filterOptions(this.options, value);
+
+        this.filteredOptions = filterOptions(this.options, value, this.select.dataset.filtertype);
 
         const count = this.ajaxResultCount || this.filteredOptions.length;
         const c = document.createDocumentFragment();
@@ -341,6 +343,12 @@ MultiselectButtons.prototype.onInputBlur = function () {
     }
 
     this.inputEl.value = '';
+    if (!this.select.multiple) {
+        const selectedOption = this.select.querySelector('option:checked');
+        if (selectedOption) {
+            this.inputEl.value = selectedOption.innerText;
+        }
+    }
 
     if (this.open) {
         this.updateMenuState(false, false);
